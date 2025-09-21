@@ -11,19 +11,19 @@ export const players: Player[] = [
 ];
 
 export const members: Player[] = [
-    { name: 'Sato', position: 'WS' },
-    { name: 'Kato', position: 'OP' },
-    { name: 'Ito', position: 'M' },
-    { name: 'Abe', position: 'S' },
-    { name: 'Ono', position: 'WS' },
-    { name: 'Endo', position: 'M' },
-    { name: 'Member1', position: 'WS' },
-    { name: 'Member2', position: 'OP' },
-    { name: 'Member3', position: 'M' },
-    { name: 'Member4', position: 'S' },
-    { name: 'Member5', position: 'WS' },
-    { name: 'Member6', position: 'M' },
-    { name: 'Member7', position: 'L' },
+    { id: 'p1', name: 'Sato', position: 'WS' },
+    { id: 'p2', name: 'Kato', position: 'OP' },
+    { id: 'p3', name: 'Ito', position: 'M' },
+    { id: 'p4', name: 'Abe', position: 'S' },
+    { id: 'p5', name: 'Ono', position: 'WS' },
+    { id: 'p6', name: 'Endo', position: 'M' },
+    { id: 'p7', name: 'Member1', position: 'WS' },
+    { id: 'p8', name: 'Member2', position: 'OP' },
+    { id: 'p9', name: 'Member3', position: 'M' },
+    { id: 'p11', name: 'Member4', position: 'S' },
+    { id: 'p12', name: 'Member5', position: 'WS' },
+    { id: 'L1', name: 'Member6', position: 'L' },
+    { id: 'L2', name: 'Member7', position: 'L' },
 ];
 
 
