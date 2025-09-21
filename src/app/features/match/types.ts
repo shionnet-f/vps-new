@@ -64,12 +64,12 @@ export type MatchState = {
     rotation: Rotation;
     libero?: PlayerId;
     timeoutUsed: { us: boolean; them: boolean };
-    players: Player[];
+    members: Player[];
     stats: Record<PlayerId, PlayerStats>;
 };
 
 // サンプル初期値
-const emptyStats = (): PlayerStats => ({
+export const emptyStats = (): PlayerStats => ({
     serve: { count: 0, point: 0, miss: 0 },
     spike: { count: 0, point: 0, miss: 0 },
     block: { count: 0, point: 0 },
@@ -84,7 +84,22 @@ export const initialMatch: MatchState = {
     server: 'us',
     rotation: { 1: 'p1', 2: 'p2', 3: 'p3', 4: 'p4', 5: 'p5', 6: 'p6' },
     timeoutUsed: { us: false, them: false },
-    players: [],
+    members: [],
     stats: { p1: emptyStats(), p2: emptyStats(), p3: emptyStats(), p4: emptyStats(), p5: emptyStats(), p6: emptyStats() }
 
 };
+
+export type K1 = keyof PlayerStats;
+export type K2<K extends K1> = keyof PlayerStats[K];
+export type StatPath =
+    | readonly ['reception', keyof StatReception]
+    | readonly ['serve', keyof StatServe]
+    | readonly ['block', keyof StatBlock]
+    | readonly ['spike', keyof StatSpike]
+    | readonly ['other', keyof StatOther];
+
+export type StatReceptionKey = keyof PlayerStats['reception'];
+export type StatServeKey = keyof PlayerStats['serve'];
+export type StatBlockKey = keyof PlayerStats['block'];
+export type StatSpikeKey = keyof PlayerStats['spike'];
+export type StatOtherKey = keyof PlayerStats['other'];

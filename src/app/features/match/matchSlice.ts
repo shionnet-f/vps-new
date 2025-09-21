@@ -1,6 +1,6 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { produceWithPatches, applyPatches, Patch } from 'immer';
-import { MatchState, Team, PlayerId, Rotation, initialMatch } from './types';
+import { MatchState, Team, PlayerId, Rotation, initialMatch, StatPath, PlayerStats } from './types';
 
 
 type HistoryEntry = { redo: Patch[]; undo: Patch[]; label?: string };
@@ -65,15 +65,24 @@ const slice = createSlice({
             state.future = [];
         },
 
-        bumpCell(state, action: PayloadAction<{ pid: PlayerId; path: ['spike', 'count'] | ['serve', 'point'] | ['serve', 'miss'] }>) {
+        bumpCell(state, action: PayloadAction<{ pid: PlayerId; path: StatPath }>) {
             const { pid, path } = action.payload;
-            const [k1, k2] = path;
-            const [next, p, inv] = produceWithPatches(state.present, d => {
-                (d.stats[pid][k1] as any)[k2] += 1;
-            });
-            if (p.length === 0) return;
+            const k1 = path[0] as keyof PlayerStats;
+            const k2 = path[1] as keyof PlayerStats[typeof k1];
+            const [next, patches, inversePatches] = produceWithPatches(
+                state.present,
+                (draft) => {
+                    (draft.stats[pid][k1] as any)[k2] += 1;
+                }
+            );
+
+            if (patches.length === 0) return;
             state.present = next;
-            state.past.push({ redo: p, undo: inv, label: `cell:${pid}.${k1}.${k2}+1` });
+            state.past.push({
+                redo: patches,
+                undo: inversePatches,
+                label: `cell:${pid}.${String(k1)}.${String(k2)}+1`,
+            });
             state.future = [];
         },
     }
