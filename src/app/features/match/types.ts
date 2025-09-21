@@ -55,3 +55,36 @@ export type MatchSetState = {
     rotation: Rotation;
     libero?: string
 }
+
+export type MatchState = {
+    id: string;
+    setNo: number;
+    score: { us: number; them: number };
+    server: 'us' | 'them';
+    rotation: Rotation;
+    libero?: PlayerId;
+    timeoutUsed: { us: boolean; them: boolean };
+    players: Player[];
+    stats: Record<PlayerId, PlayerStats>;
+};
+
+// サンプル初期値
+const emptyStats = (): PlayerStats => ({
+    serve: { count: 0, point: 0, miss: 0 },
+    spike: { count: 0, point: 0, miss: 0 },
+    block: { count: 0, point: 0 },
+    reception: { A: 0, BC: 0, miss: 0 },
+    other: { point: 0, miss: 0 },
+});
+
+export const initialMatch: MatchState = {
+    id: '',
+    setNo: 1,
+    score: { us: 0, them: 0 },
+    server: 'us',
+    rotation: { 1: 'p1', 2: 'p2', 3: 'p3', 4: 'p4', 5: 'p5', 6: 'p6' },
+    timeoutUsed: { us: false, them: false },
+    players: [],
+    stats: { p1: emptyStats(), p2: emptyStats(), p3: emptyStats(), p4: emptyStats(), p5: emptyStats(), p6: emptyStats() }
+
+};
