@@ -45,7 +45,10 @@ const slice = createSlice({
                 draft.score[winner] += 1;
                 if (serverChange) {
                     draft.server = winner;
-                    if (winner === 'us') draft.rotation = rotateCW(draft.rotation);
+                    if (winner === 'us') {
+                        draft.rotation = rotateCW(draft.rotation);
+                        draft.slotOffset = ((draft.slotOffset ?? 0) + 1) % 6;
+                    }
                 }
             });
             if (p.length === 0) return;

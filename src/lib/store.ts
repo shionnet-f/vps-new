@@ -1,5 +1,5 @@
 import { configureStore, Middleware } from '@reduxjs/toolkit';
-import match from '../features/match/matchSlice';
+import match from '@/lib/features/match/matchSlice';
 import { enablePatches } from 'immer';
 enablePatches();
 
