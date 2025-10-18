@@ -1,36 +1,27 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# VPS: Volleyball Player Scope
+**紙より速く、正確に。すべてのラリーを資産に。**
+## What
+バレーボールの試合記録を“紙より速く・正確に”入力し、あとで見返せるアプリです。
+1ページでスコア・交代・タイムアウトを記録し、参照ページで結果とタイムラインを確認します。
+## Why（なぜ作る？）
+- 現場では**入力が遅い／誤操作が多い** → 試合中の判断に活かしにくい  
+- 紙や雑多なメモだと**後から集計が困難** → 改善点が見えにくい  
+→ **Undo常設・最小タップ・時系列保存**で、入力負担を減らしつつ再利用可能なデータを残す。
 
-## Getting Started
+### 背景 / きっかけ
+ハッカソンで設定した課題。チームメンバーの1人（バレーボールコーチ）のチームでは、  
+試合データを紙で残していたが保存・活用が十分でないという実情があった。  
+もしWebアプリで入力→保存→活用を一体化できれば、体験を高めつつ時系列データを保持でき、  
+現場では素早く、振り返りでは正確に使えると考えた
 
-First, run the development server:
+## Status（現在地）
+- **MVP（薄い全体）**：試合データ入力ページが動作。  
+- 参照/選手/分析ページ：これから着手。  
+- デプロイ/API/自動テスト：未対応
 
+
+## Quick Start（実行方法）
 ```bash
+npm i
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
-
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
