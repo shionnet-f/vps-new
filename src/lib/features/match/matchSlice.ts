@@ -2,6 +2,7 @@ import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { produceWithPatches, applyPatches, Patch } from 'immer';
 import { MatchState, Team, PlayerId, Rotation, initialMatch, StatPath, PlayerStats } from './types';
 
+import type { RootState, AppDispatch } from "@/lib/store";
 
 type HistoryEntry = { redo: Patch[]; undo: Patch[]; label?: string };
 type Undoable<T> = { present: T; past: HistoryEntry[]; future: HistoryEntry[] };
@@ -18,11 +19,14 @@ const slice = createSlice({
     name: 'matchInput',
     initialState,
     reducers: {
-        applyWithHistory(state, action: PayloadAction<{ label?: string; mutate: (draft: MatchState) => void; }>) {
-            const [next, patches, inverse] = produceWithPatches(state.present, action.payload.mutate);
+        _applyPatches(
+            state,
+            action: PayloadAction<{ label?: string; patches: Patch[]; inverse: Patch[] }>
+        ) {
+            const { patches, inverse, label } = action.payload;
             if (patches.length === 0) return;
-            state.present = next;
-            state.past.push({ redo: patches, undo: inverse, label: action.payload.label });
+            state.present = applyPatches(state.present, patches);
+            state.past.push({ redo: patches, undo: inverse, label });
             state.future = [];
         },
         undo(state) {
@@ -45,7 +49,10 @@ const slice = createSlice({
                 draft.score[winner] += 1;
                 if (serverChange) {
                     draft.server = winner;
-                    if (winner === 'us') draft.rotation = rotateCW(draft.rotation);
+                    if (winner === 'us') {
+                        draft.rotation = rotateCW(draft.rotation);
+                        draft.slotOffset = ((draft.slotOffset ?? 0) + 1) % 6;
+                    }
                 }
             });
             if (p.length === 0) return;
@@ -88,5 +95,14 @@ const slice = createSlice({
     }
 });
 
-export const { applyWithHistory, rally, toggleTimeout, bumpCell, undo, redo } = slice.actions;
+export const applyWithHistory =
+    (args: { label?: string; mutate: (draft: MatchState) => void }) =>
+        (dispatch: AppDispatch, getState: () => RootState) => {
+            const present = getState().match.present;
+            const [_, patches, inverse] = produceWithPatches(present, args.mutate);
+            dispatch(_applyPatches({ label: args.label, patches, inverse }));
+        };
+
+
+export const { _applyPatches, rally, toggleTimeout, bumpCell, undo, redo } = slice.actions;
 export default slice.reducer;

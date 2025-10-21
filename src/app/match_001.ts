@@ -1,4 +1,4 @@
-import { Player, PlayerId, PlayerStats, Rotation } from "./features/match/types";
+import { Player, PlayerId, PlayerStats, Rotation } from "@/lib/features/match/types";
 
 export const players: Player[] = [
     { id: 'p1', name: 'Sato', position: 'WS' },

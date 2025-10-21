@@ -66,6 +66,7 @@ export type MatchState = {
     timeoutUsed: { us: boolean; them: boolean };
     members: Player[];
     stats: Record<PlayerId, PlayerStats>;
+    slotOffset: number;
 };
 
 // サンプル初期値
@@ -85,8 +86,8 @@ export const initialMatch: MatchState = {
     rotation: { 1: 'p1', 2: 'p2', 3: 'p3', 4: 'p4', 5: 'p5', 6: 'p6' },
     timeoutUsed: { us: false, them: false },
     members: [],
-    stats: { p1: emptyStats(), p2: emptyStats(), p3: emptyStats(), p4: emptyStats(), p5: emptyStats(), p6: emptyStats() }
-
+    stats: { p1: emptyStats(), p2: emptyStats(), p3: emptyStats(), p4: emptyStats(), p5: emptyStats(), p6: emptyStats() },
+    slotOffset: 0,
 };
 
 export type K1 = keyof PlayerStats;

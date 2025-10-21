@@ -1,8 +1,11 @@
 'use client';
 import { useState } from "react";
-import { useAppDispatch, useAppSelector } from "@/app/lib/hooks";
-import { bumpCell } from "@/app/features/match/matchSlice";
-import { MatchMeta, MatchState, PlayerStats, PlayerRow, Rotation, RotationPos, emptyStats, K1, K2, StatPath } from "@/app/features/match/types";
+import { useAppDispatch, useAppSelector } from "@/lib/hooks";
+import { bumpCell, redo, undo, rally, applyWithHistory, toggleTimeout } from "@/lib/features/match/matchSlice";
+import { MatchMeta, MatchState, PlayerStats, PlayerRow, Rotation, RotationPos, emptyStats, K1, K2, StatPath } from "@/lib/features/match/types";
+
+import { Description, Dialog, DialogBackdrop, DialogPanel, DialogTitle } from "@headlessui/react"
+
 
 type ReceptionKey = keyof PlayerStats['reception'];
 type ServeKey = keyof PlayerStats['serve'];
@@ -63,10 +66,15 @@ export default function MatchInputTable() {
         opponent: '',
         recorder: ''
     })
+    const [isOpen, setIsOpen] = useState(false)
 
     const dispatch = useAppDispatch();
     const present = useAppSelector(s => s.match.present);
+    const canUndo = useAppSelector(s => s.match.past.length > 0);
+    const canRedo = useAppSelector(s => s.match.future.length > 0);
     const rows = deriveRows(present);
+    const score = present.score
+    const server = present.server
 
     function getVal<K extends keyof PlayerStats, P extends keyof PlayerStats[K]>(
         pid: string, k1: K, k2: P
@@ -75,16 +83,16 @@ export default function MatchInputTable() {
         return ((present.stats[pid]?.[k1] as any)?.[k2] ?? 0) as number;
     }
 
-    // const r1 = (n: number) => Math.round(n * 10) / 10;
-    // function totalPlus(s: MatchState, pid: string) {
-    //     const ps = s.stats[pid]; if (!ps) return 0;
-    //     return ps.serve.point + ps.block.point + ps.spike.point + ps.other.point;
-    // }
-    // function totalMinus(s: MatchState, pid: string) {
-    //     const ps = s.stats[pid]; if (!ps) return 0;
-    //     return ps.serve.miss + ps.spike.miss + ps.other.miss + ps.reception.miss;
-    // }
-    // function totalNet(s: MatchState, pid: string) { return totalPlus(s, pid) - totalMinus(s, pid); }
+    const r1 = (n: number) => Math.round(n * 10) / 10;
+    function totalPlus(s: MatchState, pid: string) {
+        const ps = s.stats[pid]; if (!ps) return 0;
+        return ps.serve.point + ps.block.point + ps.spike.point + ps.other.point;
+    }
+    function totalMinus(s: MatchState, pid: string) {
+        const ps = s.stats[pid]; if (!ps) return 0;
+        return ps.serve.miss + ps.spike.miss + ps.other.miss + ps.reception.miss;
+    }
+    function totalNet(s: MatchState, pid: string) { return totalPlus(s, pid) - totalMinus(s, pid); }
 
     const metaClass = 'h-10 w-full rounded-md border border-gray-300 bg-[#D9D9D9] px-3 text-sm outline-none focus:ring-2 focus:ring-purple-300'
     const tableBorder = 'border border-[#6D28D9]/40';
@@ -195,17 +203,15 @@ export default function MatchInputTable() {
 
                         <div className="flex items-baseline gap-3 md:gap-4">
                             <span className="font-semibold text-base md:text-xl">
-                                鳥野高校
+                                {server === "us" ? "◎" : ""}鳥野高校
                             </span>
 
-                            <output
-                                aria-live="polite"
-                                className="font-extrabold text-2xl md:text-4xl leading-none"
-                            >
-                                7 <span className="text-gray-600 font-semibold text-xl md:text-2xl">-</span> 4
+                            <output aria-live="polite" className="font-extrabold text-2xl md:text-4xl leading-none">
+                                {score.us} <span className="text-gray-600 font-semibold text-xl md:text-2xl">-</span> {score.them}
                             </output>
 
                             <span className="font-semibold text-base md:text-xl">
+                                {server === "them" ? "◎" : ""}
                                 {meta.opponent}
                             </span>
                         </div>
@@ -214,8 +220,18 @@ export default function MatchInputTable() {
                             aria-label="得点加算"
                             className="ml-auto flex gap-2 rounded-full border border-purple-400 p-1 bg-white"
                         >
-                            <button className="px-4 py-1.5 rounded-full bg-purple-700 text-white">us +1</button>
-                            <button className="px-4 py-1.5 rounded-full border border-purple-600 text-purple-700">them +1</button>
+                            <button
+                                className="px-4 py-1.5 rounded-full bg-purple-700 text-white hover:bg-purple-800"
+                                onClick={() => dispatch(rally({ winner: 'us' }))}
+                            >
+                                us +1
+                            </button>
+                            <button
+                                className="px-4 py-1.5 rounded-full border border-purple-700 text-purple-700 hover:bg-gray-200"
+                                onClick={() => dispatch(rally({ winner: 'them' }))}
+                            >
+                                them +1
+                            </button>
                         </div>
                     </div>
 
@@ -224,13 +240,15 @@ export default function MatchInputTable() {
                         <figure className="text-center">
                             <figcaption className="text-[11px] text-gray-600 mb-1">1つ戻る</figcaption>
                             <button type="button" aria-label="1つ戻る"
-                                className="px-8 py-2 rounded-md border border-gray-400/60 bg-gray-200/70 hover:bg-gray-300 font-bold">
+                                className="px-8 py-2 rounded-md border border-gray-400/60 bg-gray-200/70 hover:bg-gray-300 font-bold"
+                                onClick={() => dispatch(undo())} disabled={!canUndo}>
                                 ＜＜
                             </button>
                         </figure>
                         <figure className="text-center">
                             <figcaption className="text-[11px] text-gray-600 mb-1">1つ進む</figcaption>
                             <button type="button" aria-label="1つ進む"
+                                onClick={() => dispatch(redo())} disabled={!canRedo}
                                 className="px-8 py-2 rounded-md border border-gray-400/60 bg-gray-200/70 hover:bg-gray-300 font-bold">
                                 ＞＞
                             </button>
@@ -300,8 +318,58 @@ export default function MatchInputTable() {
                                 <tr key={r.playerId} className="align-middle">
                                     {/* 順/ポジ/名前 */}
                                     <td className={`h-8 ${tableBorder}`}>{r.slot}</td>
-                                    <td className={`h-8 ${tableBorder}`}>{r.position}</td>
-                                    <td className={`h-8 ${tableBorder} px-2 text-left`}>{r.name}</td>
+
+                                    {/* ポジション：select 即時保存 */}
+                                    <td className={`h-8 ${tableBorder} p-0`}>
+                                        <select
+                                            className="w-full h-8 bg-white text-[11px] outline-none focus:ring-2 focus:ring-purple-300"
+                                            value={r.position}
+                                            onChange={(e) => {
+                                                const pos = e.target.value as 'WS' | 'OP' | 'M' | 'L' | 'S' | 'PS';
+                                                dispatch(applyWithHistory({
+                                                    label: `position:${r.playerId}=${pos}`,
+                                                    mutate: (draft) => {
+                                                        // members になければ作成（最小）
+                                                        const idx = draft.members.findIndex(m => m.id === r.playerId);
+                                                        if (idx === -1) {
+                                                            draft.members.push({ id: r.playerId, name: r.name ?? '', position: pos });
+                                                        } else {
+                                                            draft.members[idx].position = pos;
+                                                        }
+                                                    }
+                                                }));
+                                            }}
+                                        >
+                                            {(['WS', 'OP', 'M', 'L', 'S', 'PS'] as const).map(p => (
+                                                <option key={p} value={p}>{p}</option>
+                                            ))}
+                                        </select>
+                                    </td>
+
+                                    {/* 名前：input（blurで保存して履歴1件に） */}
+                                    <td className={`h-8 ${tableBorder} p-0`}>
+                                        <input
+                                            type="text"
+                                            defaultValue={r.name}
+                                            className="w-full h-8 px-2 bg-white text-[11px] outline-none focus:ring-2 focus:ring-purple-300"
+                                            onBlur={(e) => {
+                                                const name = e.target.value;
+                                                if (name === r.name) return; // 変化なしなら何もしない
+                                                dispatch(applyWithHistory({
+                                                    label: `name:${r.playerId}=${name}`,
+                                                    mutate: (draft) => {
+                                                        const idx = draft.members.findIndex(m => m.id === r.playerId);
+                                                        if (idx === -1) {
+                                                            // 既存行の表示値を尊重して新規作成
+                                                            draft.members.push({ id: r.playerId, name, position: r.position });
+                                                        } else {
+                                                            draft.members[idx].name = name;
+                                                        }
+                                                    }
+                                                }));
+                                            }}
+                                        />
+                                    </td>
 
                                     {/* レセプション A / BC / ミスP */}
                                     {RECEPTION_KEYS.map(k => (
@@ -362,12 +430,102 @@ export default function MatchInputTable() {
                     </table>
                 </div>
             </section>
-            <section className="text-black">
-                <button className="border">選手交代</button>
-                <button className="border">タイムアウト</button>
-                <button className="border">要約</button>
-                <button className="border">保存</button>
+            <section className="text-black max-w-screen-lg mx-auto px-4 py-4">
+                <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                    <button
+                        className="inline-flex items-center gap-2 px-4 py-2 rounded-md border border-gray-300 bg-white text-sm font-semibold
+                 hover:bg-gray-50 active:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-300"
+                    >
+                        選手交代
+                    </button>
+                    <button
+                        className="inline-flex items-center gap-2 px-4 py-2 rounded-md border border-red-300 bg-white text-sm font-semibold text-red-700
+                 hover:bg-red-50 active:bg-red-100 focus:outline-none focus:ring-2 focus:ring-red-300"
+                    >
+                        タイムアウト
+                    </button>
+                    <button
+                        onClick={() => setIsOpen(true)}
+                        className="inline-flex items-center gap-2 px-4 py-2 rounded-md border border-gray-300 bg-white text-sm font-semibold
+                 hover:bg-gray-50 active:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-300"
+                    >
+                        要約
+                    </button>
+                    <Dialog open={isOpen} onClose={() => setIsOpen(false)} className="xrelative z-50">
+                        <DialogBackdrop className="fixed inset-0 bg-black/45 backdrop-blur-[5px]" />
+                        <div className="fixed inset-0 flex w-screen items-center justify-center p-4">
+                            <DialogPanel className="w-full max-w-3xl rounded-xl bg-white p-6 shadow-xl max-h-[85vh] overflow-auto">
+                                <DialogTitle className="text-black text-center text-lg font-semibold">-- 要約 --</DialogTitle>
+
+                                <table className="w-full table-fixed border-collapse font-bold text-[11px]
+                    [&>thead>tr]:h-8 [&>tbody>tr>td]:p-0 [&>tbody>tr>td]:h-8 text-black">
+                                    <colgroup>
+                                        <col className="w-7" />
+                                        <col className="w-11" />
+                                        <col className="w-24" />
+                                        <col className="w-10" />
+                                        <col className="w-10" />
+                                        <col className="w-9" span={2} />
+                                        <col className="w-10" span={3} />
+                                    </colgroup>
+
+                                    {/* ヘッダは2行とも thead 内に */}
+                                    <thead>
+                                        <tr className="bg-gray-100 text-purple-700">
+                                            <th className={tableBorder} rowSpan={2} scope="col">順</th>
+                                            <th className={tableBorder} rowSpan={2} scope="col">ポジ</th>
+                                            <th className={tableBorder} rowSpan={2} scope="col">名前</th>
+                                            <th className={tableBorder} colSpan={1} scope="col">レセプ</th>
+                                            <th className={tableBorder} colSpan={1} scope="col">サーブ</th>
+                                            <th className={tableBorder} colSpan={2} scope="col">スパイク</th>
+                                            <th className={tableBorder} colSpan={3} scope="col">TOTALポイント</th>
+                                        </tr>
+                                        <tr className="bg-[#D9D9D9] text-[#6D28D9]">
+                                            {/* レセプション */}
+                                            <th className={tableBorder} scope="col">全体%</th>
+                                            {/* サーブ */}
+                                            <th className={tableBorder} scope="col">ミス%</th>
+                                            {/* スパイク */}
+                                            <th className={tableBorder} scope="col">決定率</th>
+                                            <th className={tableBorder} scope="col">全体%</th>
+                                            {/* TOTALポイント */}
+                                            <th className={tableBorder} scope="col">+</th>
+                                            <th className={tableBorder} scope="col">-</th>
+                                            <th className={tableBorder} scope="col">±</th>
+                                        </tr>
+                                    </thead>
+
+                                    {/* データ部 */}
+                                    <tbody className="text-[11px]">
+                                        {rows.map((r) => (
+                                            <tr key={r.playerId} className="odd:bg-white even:bg-gray-50">
+                                                <td className={`h-8 ${tableBorder}`}>{r.slot}</td>
+                                                <td className={`h-8 ${tableBorder}`}>{r.position}</td>
+                                                <td className={`h-8 ${tableBorder}`}>{r.name}</td>
+                                                <td className={tableBorder + " tabular-nums text-right"}>%</td>
+                                                <td className={tableBorder + " tabular-nums text-right"}>%</td>
+                                                <td className={tableBorder + " tabular-nums text-right"}>%</td>
+                                                <td className={tableBorder + " tabular-nums text-right"}>%</td>
+                                                <td className={tableBorder + " tabular-nums text-right"}></td>
+                                                <td className={tableBorder + " tabular-nums text-right"}></td>
+                                                <td className={tableBorder + " tabular-nums text-right"}></td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </DialogPanel>
+
+                        </div>
+                    </Dialog>
+                    <div className="ms-auto" />
+                    <button
+                        className="inline-flex items-center gap-2 px-5 py-2 rounded-md border border-transparent bg-purple-700 text-white text-sm font-semibold hover:bg-purple-800 active:bg-purple-900 focus:outline-none focus:ring-2 focus:ring-purple-300 shadow-sm"
+                    >
+                        保存
+                    </button>
+                </div>
             </section>
+            <button >open dialog</button>
         </main >
     )
 };
