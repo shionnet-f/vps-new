@@ -4,6 +4,9 @@ import { useAppDispatch, useAppSelector } from "@/lib/hooks";
 import { bumpCell, redo, undo, rally, applyWithHistory, toggleTimeout } from "@/lib/features/match/matchSlice";
 import { MatchMeta, MatchState, PlayerStats, PlayerRow, Rotation, RotationPos, emptyStats, K1, K2, StatPath } from "@/lib/features/match/types";
 
+import { Description, Dialog, DialogBackdrop, DialogPanel, DialogTitle } from "@headlessui/react"
+
+
 type ReceptionKey = keyof PlayerStats['reception'];
 type ServeKey = keyof PlayerStats['serve'];
 type BlockKey = keyof PlayerStats['block'];
@@ -63,6 +66,7 @@ export default function MatchInputTable() {
         opponent: '',
         recorder: ''
     })
+    const [isOpen, setIsOpen] = useState(false)
 
     const dispatch = useAppDispatch();
     const present = useAppSelector(s => s.match.present);
@@ -79,16 +83,16 @@ export default function MatchInputTable() {
         return ((present.stats[pid]?.[k1] as any)?.[k2] ?? 0) as number;
     }
 
-    // const r1 = (n: number) => Math.round(n * 10) / 10;
-    // function totalPlus(s: MatchState, pid: string) {
-    //     const ps = s.stats[pid]; if (!ps) return 0;
-    //     return ps.serve.point + ps.block.point + ps.spike.point + ps.other.point;
-    // }
-    // function totalMinus(s: MatchState, pid: string) {
-    //     const ps = s.stats[pid]; if (!ps) return 0;
-    //     return ps.serve.miss + ps.spike.miss + ps.other.miss + ps.reception.miss;
-    // }
-    // function totalNet(s: MatchState, pid: string) { return totalPlus(s, pid) - totalMinus(s, pid); }
+    const r1 = (n: number) => Math.round(n * 10) / 10;
+    function totalPlus(s: MatchState, pid: string) {
+        const ps = s.stats[pid]; if (!ps) return 0;
+        return ps.serve.point + ps.block.point + ps.spike.point + ps.other.point;
+    }
+    function totalMinus(s: MatchState, pid: string) {
+        const ps = s.stats[pid]; if (!ps) return 0;
+        return ps.serve.miss + ps.spike.miss + ps.other.miss + ps.reception.miss;
+    }
+    function totalNet(s: MatchState, pid: string) { return totalPlus(s, pid) - totalMinus(s, pid); }
 
     const metaClass = 'h-10 w-full rounded-md border border-gray-300 bg-[#D9D9D9] px-3 text-sm outline-none focus:ring-2 focus:ring-purple-300'
     const tableBorder = 'border border-[#6D28D9]/40';
@@ -313,7 +317,6 @@ export default function MatchInputTable() {
                             {rows.map(r => (
                                 <tr key={r.playerId} className="align-middle">
                                     {/* 順/ポジ/名前 */}
-                                    {/* 順/ポジ/名前 */}
                                     <td className={`h-8 ${tableBorder}`}>{r.slot}</td>
 
                                     {/* ポジション：select 即時保存 */}
@@ -442,21 +445,87 @@ export default function MatchInputTable() {
                         タイムアウト
                     </button>
                     <button
+                        onClick={() => setIsOpen(true)}
                         className="inline-flex items-center gap-2 px-4 py-2 rounded-md border border-gray-300 bg-white text-sm font-semibold
                  hover:bg-gray-50 active:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-300"
                     >
                         要約
                     </button>
+                    <Dialog open={isOpen} onClose={() => setIsOpen(false)} className="xrelative z-50">
+                        <DialogBackdrop className="fixed inset-0 bg-black/45 backdrop-blur-[5px]" />
+                        <div className="fixed inset-0 flex w-screen items-center justify-center p-4">
+                            <DialogPanel className="w-full max-w-3xl rounded-xl bg-white p-6 shadow-xl max-h-[85vh] overflow-auto">
+                                <DialogTitle className="text-black text-center text-lg font-semibold">-- 要約 --</DialogTitle>
+
+                                <table className="w-full table-fixed border-collapse font-bold text-[11px]
+                    [&>thead>tr]:h-8 [&>tbody>tr>td]:p-0 [&>tbody>tr>td]:h-8 text-black">
+                                    <colgroup>
+                                        <col className="w-7" />
+                                        <col className="w-11" />
+                                        <col className="w-24" />
+                                        <col className="w-10" />
+                                        <col className="w-10" />
+                                        <col className="w-9" span={2} />
+                                        <col className="w-10" span={3} />
+                                    </colgroup>
+
+                                    {/* ヘッダは2行とも thead 内に */}
+                                    <thead>
+                                        <tr className="bg-gray-100 text-purple-700">
+                                            <th className={tableBorder} rowSpan={2} scope="col">順</th>
+                                            <th className={tableBorder} rowSpan={2} scope="col">ポジ</th>
+                                            <th className={tableBorder} rowSpan={2} scope="col">名前</th>
+                                            <th className={tableBorder} colSpan={1} scope="col">レセプ</th>
+                                            <th className={tableBorder} colSpan={1} scope="col">サーブ</th>
+                                            <th className={tableBorder} colSpan={2} scope="col">スパイク</th>
+                                            <th className={tableBorder} colSpan={3} scope="col">TOTALポイント</th>
+                                        </tr>
+                                        <tr className="bg-[#D9D9D9] text-[#6D28D9]">
+                                            {/* レセプション */}
+                                            <th className={tableBorder} scope="col">全体%</th>
+                                            {/* サーブ */}
+                                            <th className={tableBorder} scope="col">ミス%</th>
+                                            {/* スパイク */}
+                                            <th className={tableBorder} scope="col">決定率</th>
+                                            <th className={tableBorder} scope="col">全体%</th>
+                                            {/* TOTALポイント */}
+                                            <th className={tableBorder} scope="col">+</th>
+                                            <th className={tableBorder} scope="col">-</th>
+                                            <th className={tableBorder} scope="col">±</th>
+                                        </tr>
+                                    </thead>
+
+                                    {/* データ部 */}
+                                    <tbody className="text-[11px]">
+                                        {rows.map((r) => (
+                                            <tr key={r.playerId} className="odd:bg-white even:bg-gray-50">
+                                                <td className={`h-8 ${tableBorder}`}>{r.slot}</td>
+                                                <td className={`h-8 ${tableBorder}`}>{r.position}</td>
+                                                <td className={`h-8 ${tableBorder}`}>{r.name}</td>
+                                                <td className={tableBorder + " tabular-nums text-right"}>%</td>
+                                                <td className={tableBorder + " tabular-nums text-right"}>%</td>
+                                                <td className={tableBorder + " tabular-nums text-right"}>%</td>
+                                                <td className={tableBorder + " tabular-nums text-right"}>%</td>
+                                                <td className={tableBorder + " tabular-nums text-right"}></td>
+                                                <td className={tableBorder + " tabular-nums text-right"}></td>
+                                                <td className={tableBorder + " tabular-nums text-right"}></td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </DialogPanel>
+
+                        </div>
+                    </Dialog>
                     <div className="ms-auto" />
                     <button
-                        className="inline-flex items-center gap-2 px-5 py-2 rounded-md border border-transparent bg-purple-700 text-white text-sm font-semibold
-                 hover:bg-purple-800 active:bg-purple-900 focus:outline-none focus:ring-2 focus:ring-purple-300 shadow-sm"
+                        className="inline-flex items-center gap-2 px-5 py-2 rounded-md border border-transparent bg-purple-700 text-white text-sm font-semibold hover:bg-purple-800 active:bg-purple-900 focus:outline-none focus:ring-2 focus:ring-purple-300 shadow-sm"
                     >
                         保存
                     </button>
                 </div>
             </section>
-
+            <button >open dialog</button>
         </main >
     )
 };
