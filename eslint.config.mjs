@@ -1,6 +1,12 @@
-import { dirname } from "path";
+// eslint.config.mjs
 import { fileURLToPath } from "url";
+import { dirname } from "path";
 import { FlatCompat } from "@eslint/eslintrc";
+import js from "@eslint/js";
+import ts from "@typescript-eslint/eslint-plugin";
+import tsParser from "@typescript-eslint/parser";
+import reactHooks from "eslint-plugin-react-hooks";
+import prettierPlugin from "eslint-plugin-prettier";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -9,8 +15,38 @@ const compat = new FlatCompat({
   baseDirectory: __dirname,
 });
 
-const eslintConfig = [
+export default [
+  js.configs.recommended,
+
   ...compat.extends("next/core-web-vitals", "next/typescript"),
+
+  {
+    plugins: {
+      "@typescript-eslint": ts,
+      "react-hooks": reactHooks,
+      prettier: prettierPlugin,
+    },
+    languageOptions: {
+      parser: tsParser,
+      parserOptions: {
+        project: "./tsconfig.json",
+      },
+    },
+    rules: {
+      "no-console": "warn",
+
+      "@typescript-eslint/no-unused-vars": [
+        "warn",
+        { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
+      ],
+
+      "react-hooks/rules-of-hooks": "error",
+      "react-hooks/exhaustive-deps": "warn",
+
+      "prettier/prettier": "warn",
+    },
+  },
+
   {
     ignores: [
       "node_modules/**",
@@ -18,8 +54,7 @@ const eslintConfig = [
       "out/**",
       "build/**",
       "next-env.d.ts",
+      "**/*.config.js",
     ],
   },
 ];
-
-export default eslintConfig;
